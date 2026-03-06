@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ways of Working</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(ellipse 130% 70% at 50% 0%, #2a1158 0%, #0f0a1e 55%),
+        linear-gradient(180deg, #0f0a1e 0%, #12102a 100%);
+      font-family: Georgia, 'Times New Roman', serif;
+      padding: 2rem 1rem 10rem;
+      overflow-x: hidden;
+    }
+
+    /* ── Stars ── */
+    .stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+    .star {
+      position: absolute; border-radius: 50%; background: #fff;
+      animation: twinkle var(--dur) ease-in-out infinite var(--del);
+    }
+    @keyframes twinkle {
+      0%, 100% { opacity: var(--lo); }
+      50%       { opacity: var(--hi); }
+    }
+
+    /* ── Title ── */
+    .app-title {
+      position: relative; z-index: 3;
+      color: rgba(201,150,42,0.5);
+      font-size: 0.65rem; letter-spacing: 0.35em; text-transform: uppercase;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 700; margin-bottom: 2.5rem;
+    }
+
+    /* ── Stage ── */
+    .stage {
+      position: relative; z-index: 3;
+      width: 100%; max-width: 520px;
+      display: flex; flex-direction: column; align-items: center;
+    }
+
+    /* ── PICK VIEW ── */
+    .pick-view {
+      display: flex; flex-direction: column; align-items: center; gap: 1.75rem;
+      width: 100%;
+    }
+    .pick-view.hidden { display: none; }
+
+    .pick-cards { display: flex; gap: 16px; align-items: flex-end; }
+
+    .pick-card {
+      width: 120px; height: 187px;
+      border-radius: 10px; overflow: hidden;
+      cursor: default; position: relative;
+      box-shadow:
+        0 16px 40px rgba(0,0,0,0.5),
+        0 0 0 1.5px rgba(201,150,42,0.45);
+      opacity: 0;
+      transform: translateY(-20px);
+      transition: opacity 0.45s ease, transform 0.5s cubic-bezier(0.34,1.3,0.64,1), box-shadow 0.3s;
+    }
+    .pick-card:nth-child(2) { transform: translateY(-30px); }
+
+    .pick-card.shown          { opacity: 1; transform: translateY(0); }
+    .pick-card:nth-child(2).shown { transform: translateY(-12px); }
+
+    .pick-card.interactive { cursor: pointer; }
+    .pick-card.interactive:hover {
+      transform: translateY(-18px);
+      box-shadow:
+        0 26px 55px rgba(0,0,0,0.65),
+        0 0 32px rgba(201,150,42,0.5),
+        0 0 0 2px rgba(201,150,42,0.9);
+    }
+    .pick-card:nth-child(2).interactive:hover { transform: translateY(-30px); }
+
+    /* Dismissed: slide down and fade out */
+    .pick-card.dismissed {
+      opacity: 0;
+      transform: translateY(28px) scale(0.9);
+      pointer-events: none;
+      transition: opacity 0.35s ease, transform 0.35s ease, box-shadow 0.35s;
+    }
+    .pick-card:nth-child(2).dismissed { transform: translateY(16px) scale(0.9); }
+
+    .pick-hint {
+      font-size: 0.68rem; letter-spacing: 0.3em; text-transform: uppercase;
+      color: rgba(201,150,42,0.5);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 600; opacity: 0;
+      transition: opacity 0.5s ease;
+      pointer-events: none; user-select: none;
+    }
+
+    /* ── REVEAL VIEW ── */
+    .reveal-view {
+      display: none;
+      flex-direction: column; align-items: center; gap: 1.25rem;
+      width: 100%;
+      perspective: 1500px;
+    }
+    .reveal-view.active { display: flex; }
+
+    /* ── Reveal card ── */
+    .card {
+      width: 100%; max-width: 520px; border-radius: 14px; overflow: hidden;
+      box-shadow:
+        0 28px 65px rgba(0,0,0,0.55), 0 8px 20px rgba(0,0,0,0.35),
+        0 0 0 1.5px rgba(201,150,42,0.6);
+      background: #fef6e4;
+    }
+    .card-header {
+      padding: 1.2rem 1.75rem; display: flex; align-items: center; gap: 0.75rem;
+    }
+    .cat-icon {
+      width: 2rem; height: 2rem; border-radius: 50%;
+      background: rgba(255,255,255,0.6);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.95rem; flex-shrink: 0;
+    }
+    .cat-label {
+      font-size: 0.67rem; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    .divider {
+      display: flex; align-items: center; gap: 0.65rem;
+      padding: 0 1.75rem; color: #b8870a; font-size: 0.5rem; opacity: 0.5;
+    }
+    .divider::before, .divider::after {
+      content: ''; flex: 1; height: 1px; background: #b8870a; opacity: 0.5;
+    }
+    .card-body { padding: 1.75rem 1.75rem 2.25rem; }
+    .principle-text { font-size: 1.18rem; line-height: 1.8; color: #2d1b00; }
+    .card-footer {
+      padding: 1rem 1.75rem;
+      background: rgba(0,0,0,0.04);
+      border-top: 1px solid rgba(184,135,10,0.12);
+    }
+    .counter {
+      font-size: 0.73rem; color: #9e7530;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      letter-spacing: 0.04em;
+    }
+
+    /* Progress bar */
+    .progress-wrap {
+      width: 100%; max-width: 520px;
+      height: 3px; background: rgba(201,150,42,0.15);
+      border-radius: 2px; overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, #c9962a, #f0c040);
+      border-radius: 2px;
+    }
+
+    /* ── HANDS ── */
+    .hands-wrap {
+      position: relative; z-index: 2;  /* sits behind stage z-index:3 */
+      width: 392px; max-width: calc(100% - 2rem);
+      height: 0; overflow: visible;
+      pointer-events: none;
+      display: flex; justify-content: space-between;
+      margin-top: -55px;   /* overlap the bottom of the pick cards */
+    }
+
+    .hand {
+      width: 115px; flex-shrink: 0;
+      transition: transform 0.95s cubic-bezier(0.22,1,0.36,1);
+    }
+    .hand svg {
+      width: 100%; height: auto;
+      filter: drop-shadow(0 0 14px rgba(201,150,42,0.28));
+    }
+
+    .hand-right        { transform: translateY(500px); }
+    .hand-right.raised { transform: translateY(0); }
+
+    .hand-left         { transform: translateY(500px) scaleX(-1); }
+    .hand-left.raised  { transform: translateY(0) scaleX(-1); }
+
+    /* ── Mobile ── */
+    @media (max-width: 480px) {
+      .pick-card  { width: 88px; height: 137px; }
+      .pick-cards { gap: 10px; }
+      .hands-wrap { width: 284px; }   /* 3×88 + 2×10 */
+      .hand       { width: 85px; }
+      .card-body  { padding: 1.25rem 1.25rem 1.75rem; }
+      .principle-text { font-size: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+<p class="app-title">✦ &nbsp; Ways of Working &nbsp; ✦</p>
+
+<div class="stage">
+
+  <!-- PICK VIEW: 3 face-down cards -->
+  <div class="pick-view" id="pick-view">
+    <div class="pick-cards">
+      <div class="pick-card" id="pc-0" onclick="chooseCard(0)"></div>
+      <div class="pick-card" id="pc-1" onclick="chooseCard(1)"></div>
+      <div class="pick-card" id="pc-2" onclick="chooseCard(2)"></div>
+    </div>
+    <p class="pick-hint" id="pick-hint">✦ &nbsp; Choose your card &nbsp; ✦</p>
+  </div>
+
+  <!-- REVEAL VIEW: principle card -->
+  <div class="reveal-view" id="reveal-view">
+    <div class="card" id="card">
+      <div class="card-header" id="card-header">
+        <div class="cat-icon" id="cat-icon"></div>
+        <span class="cat-label" id="cat-label"></span>
+      </div>
+      <div class="divider">✦</div>
+      <div class="card-body">
+        <p class="principle-text" id="principle-text"></p>
+      </div>
+      <div class="card-footer">
+        <span class="counter" id="counter"></span>
+      </div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+  </div>
+
+</div><!-- .stage -->
+
+<!-- Mystical hands (z-index:2, behind stage z-index:3) -->
+<div class="hands-wrap">
+  <div class="hand hand-left"  id="hand-left"></div>
+  <div class="hand hand-right" id="hand-right"></div>
+</div>
+
+<script>
+// ── Data ────────────────────────────────────────────────────────────────────
+
+const CATS = {
+  "Slack etiquette":                { color: "#7c4dba", bg: "#f3f0ff", icon: "💬" },
+  "Attitude":                       { color: "#b45309", bg: "#fef3c7", icon: "🌱" },
+  "Communication":                  { color: "#1d4ed8", bg: "#eff6ff", icon: "📢" },
+  "Decisions":                      { color: "#065f46", bg: "#ecfdf5", icon: "⚖️" },
+  "Collaboration within the team":  { color: "#9d174d", bg: "#fdf2f8", icon: "🤝" },
+  "Collaboration with other teams": { color: "#3730a3", bg: "#eef2ff", icon: "🔗" },
+  "Give and receive feedback":      { color: "#0e7490", bg: "#ecfeff", icon: "💡" },
+};
+
+const PRINCIPLES = [
+  { c: "Slack etiquette", t: "We pin a message about priority one to the private Slack" },
+  { c: "Slack etiquette", t: "I confirm when I have seen someone's Slack message, even if I don't have an answer — an emoji can be enough" },
+  { c: "Slack etiquette", t: "We write key-points from swarms and meetings on our private Slack" },
+  { c: "Slack etiquette", t: "We write important things in the private Slack instead of huddle chat" },
+  { c: "Attitude", t: "We follow the prime directive of retrospective: we understand and truly believe that everyone did the best job they could, given what was known at the time, their skills and abilities, the resources available, and the situation at hand" },
+  { c: "Attitude", t: "We have a positive bias mentality towards each other and other teams" },
+  { c: "Attitude", t: "We have a positive bias about functionality as well as people, and we try to think of solutions rather than problems" },
+  { c: "Attitude", t: "We raise problems even if we don't see a solution" },
+  { c: "Communication", t: "When we discuss things, we use illustrations" },
+  { c: "Communication", t: "When we see a message on Teams, we share it with the rest of the team" },
+  { c: "Communication", t: "We use comments in Trello when things are blocked or we want to remember other information — e.g. a MR waiting for review, waiting on a team, or a decision we made" },
+  { c: "Communication", t: "When we are away for more than half a day, we communicate it at the latest the day before" },
+  { c: "Communication", t: "It is up to each individual to turn off Slack notifications if they do not want to be disturbed (like in a meeting or workshop)" },
+  { c: "Communication", t: "Ground rule: we can always contact each other. It is up to that person to say \"not right now\" or turn off notifications if they don't have time." },
+  { c: "Decisions", t: "We document and communicate decisions" },
+  { c: "Decisions", t: "We also document when we choose not to do something, together with the reason behind the choice" },
+  { c: "Decisions", t: "We save big decisions in the decision log" },
+  { c: "Decisions", t: "We write small decisions in Slack or in Trello cards" },
+  { c: "Collaboration within the team", t: "Ping the team when starting an impromptu huddle at an unexpected time" },
+  { c: "Collaboration within the team", t: "Be explicit at daily: who works on what, whether a huddle is needed, what time it could happen, and what it is for" },
+  { c: "Collaboration within the team", t: "Consider having a huddle \"responsible\" to remind the group to take breaks and avoid going into rabbit holes" },
+  { c: "Collaboration within the team", t: "Write key-points from huddles on our Slack" },
+  { c: "Collaboration within the team", t: "Feel free to pop in and out of a huddle when you want" },
+  { c: "Collaboration within the team", t: "We do internal reviews once a week to check if we are working on the most important thing" },
+  { c: "Collaboration within the team", t: "When things are produced as individual work, they get reviewed in a huddle" },
+  { c: "Collaboration within the team", t: "Big decisions are made in the team, not individually" },
+  { c: "Collaboration within the team", t: "When prototyping, we decide explicitly what to keep and which parts need to be recoded" },
+  { c: "Collaboration with other teams", t: "We trust other teams to figure out the problems on their own" },
+  { c: "Collaboration with other teams", t: "We lift a problem to another team if we become aware of it, tell them we are willing to help — and then let go" },
+  { c: "Collaboration with other teams", t: "We stop ourselves from going into rabbit holes when discussing functionalities of other teams" },
+  { c: "Collaboration with other teams", t: "We are extra aware of the importance of knowing the state of things when working with other teams" },
+  { c: "Collaboration with other teams", t: "We continue to mention potential problems we see when people demo new ideas — even when reality is harsh — in a kind, non-confrontational way, taking into consideration what state things are in" },
+  { c: "Give and receive feedback", t: "We ask: \"What kind of feedback are you looking for?\"" },
+  { c: "Give and receive feedback", t: "We tell the state of what we want feedback on — e.g. ready for implementation, or just a loose idea" },
+  { c: "Give and receive feedback", t: "We ask about the state of the work when someone wants feedback" },
+  { c: "Give and receive feedback", t: "We are extra aware of the importance of knowing the state of things, especially when working with other teams" },
+];
+
+// ── SVG templates ────────────────────────────────────────────────────────────
+
+const BACK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 187"
+     style="position:absolute;inset:0;width:100%;height:100%">
+  <rect width="120" height="187" fill="#120b27"/>
+  <rect x="5" y="5" width="110" height="177" fill="none" stroke="#c9962a" stroke-width="1" rx="2"/>
+  <rect x="9" y="9" width="102" height="169" fill="none" stroke="#c9962a" stroke-width="0.4" opacity="0.3" rx="1"/>
+  <g transform="translate(60,93)">
+    <circle r="36" fill="none" stroke="#c9962a" stroke-width="0.4" opacity="0.12"/>
+    <path d="M0,-30 L3.8,-3.8 L30,0 L3.8,3.8 L0,30 L-3.8,3.8 L-30,0 L-3.8,-3.8 Z"
+          fill="none" stroke="#c9962a" stroke-width="1.3"/>
+    <path d="M0,-22 L2.8,-2.8 L22,0 L2.8,2.8 L0,22 L-2.8,2.8 L-22,0 L-2.8,-2.8 Z"
+          fill="none" stroke="#c9962a" stroke-width="0.5" opacity="0.35" transform="rotate(22.5)"/>
+    <line x1="0" y1="-36" x2="0" y2="-13" stroke="#c9962a" stroke-width="0.4" opacity="0.22"/>
+    <line x1="36" y1="0"  x2="13" y2="0"  stroke="#c9962a" stroke-width="0.4" opacity="0.22"/>
+    <line x1="0" y1="36"  x2="0" y2="13"  stroke="#c9962a" stroke-width="0.4" opacity="0.22"/>
+    <line x1="-36" y1="0" x2="-13" y2="0" stroke="#c9962a" stroke-width="0.4" opacity="0.22"/>
+    <circle r="12" fill="none" stroke="#c9962a" stroke-width="1"/>
+    <ellipse rx="7.5" ry="4.5" fill="none" stroke="#c9962a" stroke-width="0.9"/>
+    <circle r="2.5" fill="#c9962a" opacity="0.75"/>
+    <circle r="1"   fill="#120b27"/>
+  </g>
+  <text x="11"  y="25"  font-size="10" fill="#c9962a" opacity="0.4" font-family="serif">✦</text>
+  <text x="100" y="25"  font-size="10" fill="#c9962a" opacity="0.4" font-family="serif">✦</text>
+  <text x="11"  y="183" font-size="10" fill="#c9962a" opacity="0.4" font-family="serif">✦</text>
+  <text x="100" y="183" font-size="10" fill="#c9962a" opacity="0.4" font-family="serif">✦</text>
+</svg>`;
+
+// Right-hand SVG. Left hand uses same SVG + CSS scaleX(-1).
+const HAND_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 300">
+  <!-- Sleeve / cuff -->
+  <path d="M16,248 Q10,268 4,300 L136,300 Q130,268 124,248 Z"
+        fill="#1a0a2e" stroke="#c9962a" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M16,248 Q70,243 124,248" fill="none" stroke="#c9962a" stroke-width="0.8" opacity="0.45"/>
+  <line x1="13" y1="254" x2="127" y2="254" stroke="#c9962a" stroke-width="0.6" opacity="0.35"/>
+  <!-- Center cuff diamond -->
+  <path d="M70,262 L77,270 L70,278 L63,270 Z" fill="#c9962a" opacity="0.28"/>
+  <path d="M70,262 L77,270 L70,278 L63,270 Z" fill="none" stroke="#c9962a" stroke-width="0.9"/>
+  <line x1="70" y1="254" x2="70" y2="262" stroke="#c9962a" stroke-width="0.7" opacity="0.45"/>
+  <line x1="70" y1="278" x2="70" y2="286" stroke="#c9962a" stroke-width="0.7" opacity="0.45"/>
+  <!-- Side cuff diamonds -->
+  <path d="M36,264 L41,270 L36,276 L31,270 Z" fill="none" stroke="#c9962a" stroke-width="0.7" opacity="0.5"/>
+  <path d="M104,264 L109,270 L104,276 L99,270 Z" fill="none" stroke="#c9962a" stroke-width="0.7" opacity="0.5"/>
+  <!-- Cuff accent dots -->
+  <circle cx="53" cy="270" r="1.5" fill="#c9962a" opacity="0.38"/>
+  <circle cx="87" cy="270" r="1.5" fill="#c9962a" opacity="0.38"/>
+  <!-- Palm -->
+  <path d="M26,172 L26,248 Q70,256 114,248 L114,172
+           Q114,163 108,161 L32,161 Q26,163 26,172 Z"
+        fill="#1a0a2e" stroke="#c9962a" stroke-width="1.5" stroke-linejoin="round"/>
+  <!-- All-seeing eye on palm -->
+  <g transform="translate(70,206)">
+    <circle r="20" fill="none" stroke="#c9962a" stroke-width="0.45" opacity="0.28"/>
+    <ellipse rx="12" ry="7" fill="none" stroke="#c9962a" stroke-width="0.9" opacity="0.8"/>
+    <circle r="3.5" fill="#c9962a" opacity="0.62"/>
+    <circle r="1.5" fill="#1a0a2e"/>
+    <line x1="0" y1="-9"  x2="0"  y2="-14" stroke="#c9962a" stroke-width="0.6" opacity="0.42"/>
+    <line x1="0" y1="9"   x2="0"  y2="14"  stroke="#c9962a" stroke-width="0.6" opacity="0.42"/>
+    <line x1="-13" y1="0" x2="-18" y2="0"  stroke="#c9962a" stroke-width="0.6" opacity="0.42"/>
+    <line x1="13"  y1="0" x2="18"  y2="0"  stroke="#c9962a" stroke-width="0.6" opacity="0.42"/>
+  </g>
+  <!-- Subtle palm line -->
+  <path d="M32,177 Q70,172 108,177" fill="none" stroke="#c9962a" stroke-width="0.5" opacity="0.22"/>
+  <!-- Thumb -->
+  <path d="M26,178 Q11,174 7,157 Q3,140 14,132 Q22,126 30,135 L32,161 L26,178 Z"
+        fill="#1a0a2e" stroke="#c9962a" stroke-width="1.3" stroke-linejoin="round"/>
+  <!-- Index finger -->
+  <path d="M34,161 L34,54 Q34,42 44,40 Q54,40 54,52 L54,161 Z"
+        fill="#1a0a2e" stroke="#c9962a" stroke-width="1.3" stroke-linejoin="round"/>
+  <!-- Middle finger (tallest) -->
+  <path d="M58,161 L58,34 Q58,22 69,20 Q80,20 80,32 L80,161 Z"
+        fill="#1a0a2e" stroke="#c9962a" stroke-width="1.3" stroke-linejoin="round"/>
+  <!-- Ring finger -->
+  <path d="M84,161 L84,46 Q84,34 94,32 Q104,32 104,44 L104,161 Z"
+        fill="#1a0a2e" stroke="#c9962a" stroke-width="1.3" stroke-linejoin="round"/>
+  <!-- Pinky -->
+  <path d="M108,161 L108,68 Q108,57 117,56 Q126,56 126,67 L126,161 Z"
+        fill="#1a0a2e" stroke="#c9962a" stroke-width="1.3" stroke-linejoin="round"/>
+  <!-- Ring on middle finger -->
+  <rect x="59" y="124" width="20" height="7" rx="3.5" fill="#c9962a" opacity="0.22"/>
+  <rect x="59" y="124" width="20" height="7" rx="3.5" fill="none" stroke="#c9962a" stroke-width="0.8"/>
+  <!-- Knuckle accents -->
+  <path d="M35,162 Q44,158 53,162" fill="none" stroke="#c9962a" stroke-width="0.5" opacity="0.38"/>
+  <path d="M59,162 Q69,158 79,162" fill="none" stroke="#c9962a" stroke-width="0.5" opacity="0.38"/>
+  <path d="M85,162 Q94,158 103,162" fill="none" stroke="#c9962a" stroke-width="0.5" opacity="0.38"/>
+  <path d="M109,162 Q117,158 125,162" fill="none" stroke="#c9962a" stroke-width="0.5" opacity="0.38"/>
+  <!-- Star above cuff -->
+  <text x="62" y="249" font-size="9" fill="#c9962a" opacity="0.32" font-family="serif">✦</text>
+</svg>`;
+
+// ── Utils ────────────────────────────────────────────────────────────────────
+
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const $    = id  => document.getElementById(id);
+
+// ── Stars ────────────────────────────────────────────────────────────────────
+
+function buildStars() {
+  const wrap = $('stars');
+  for (let i = 0; i < 100; i++) {
+    const el = document.createElement('div');
+    el.className = 'star';
+    const sz = Math.random() < 0.6 ? 1 : 2;
+    el.style.cssText = [
+      `width:${sz}px`, `height:${sz}px`,
+      `top:${(Math.random()*100).toFixed(1)}%`,
+      `left:${(Math.random()*100).toFixed(1)}%`,
+      `--lo:${(Math.random()*0.12+0.02).toFixed(2)}`,
+      `--hi:${(Math.random()*0.5+0.2).toFixed(2)}`,
+      `--dur:${(Math.random()*3+2).toFixed(1)}s`,
+      `--del:-${(Math.random()*6).toFixed(1)}s`,
+    ].join(';');
+    wrap.appendChild(el);
+  }
+}
+
+// ── Random pick (cycles through all before repeating) ────────────────────────
+
+const seen = new Set();
+
+function pick() {
+  if (seen.size === PRINCIPLES.length) seen.clear();
+  let i;
+  do { i = Math.floor(Math.random() * PRINCIPLES.length); } while (seen.has(i));
+  seen.add(i);
+  return i;
+}
+
+function pickThree() { return [pick(), pick(), pick()]; }
+
+// ── Render principle into reveal card ────────────────────────────────────────
+
+function renderPrinciple(idx) {
+  const p   = PRINCIPLES[idx];
+  const cat = CATS[p.c];
+  $('card-header').style.background = cat.bg;
+  $('cat-icon').textContent         = cat.icon;
+  $('cat-label').textContent        = p.c;
+  $('cat-label').style.color        = cat.color;
+  $('principle-text').textContent   = p.t;
+  $('counter').textContent          = `${seen.size} / ${PRINCIPLES.length}`;
+}
+
+// ── State ────────────────────────────────────────────────────────────────────
+
+let state       = 'idle';   // 'idle' | 'picking' | 'revealing' | 'revealed'
+let pickIndices = [];
+let resetTimer  = null;
+
+// ── Round: show 3 face-down pick cards ──────────────────────────────────────
+
+async function startRound() {
+  clearTimeout(resetTimer);
+  state = 'idle';
+
+  // Inject SVGs (idempotent — skip if already set)
+  for (let i = 0; i < 3; i++) {
+    const pc = $(`pc-${i}`);
+    if (!pc.querySelector('svg')) pc.innerHTML = BACK_SVG;
+  }
+  const hl = $('hand-left'), hr = $('hand-right');
+  if (!hl.querySelector('svg')) hl.innerHTML = HAND_SVG;
+  if (!hr.querySelector('svg')) hr.innerHTML = HAND_SVG;
+
+  // Pick 3 principles for this round
+  pickIndices = pickThree();
+
+  // Reset pick cards
+  for (let i = 0; i < 3; i++) {
+    $(`pc-${i}`).classList.remove('shown', 'interactive', 'dismissed');
+  }
+  $('pick-hint').style.opacity = '0';
+
+  // Reset progress bar (no animation)
+  const bar = $('progress-bar');
+  bar.style.transition = 'none';
+  bar.style.width      = '0%';
+
+  // Hide reveal, show pick
+  $('reveal-view').classList.remove('active');
+  $('pick-view').classList.remove('hidden');
+
+  // Reset card transform
+  const card = $('card');
+  card.style.transition = 'none';
+  card.style.transform  = 'rotateY(-90deg)';
+
+  // Raise hands
+  await wait(120);
+  hl.classList.add('raised');
+  hr.classList.add('raised');
+  await wait(680);
+
+  // Stagger cards in
+  for (let i = 0; i < 3; i++) {
+    $(`pc-${i}`).classList.add('shown');
+    await wait(160);
+  }
+  await wait(380);
+
+  // Hands retreat
+  hl.classList.remove('raised');
+  hr.classList.remove('raised');
+  await wait(550);
+
+  // Show hint and enable picking
+  $('pick-hint').style.opacity = '1';
+  for (let i = 0; i < 3; i++) $(`pc-${i}`).classList.add('interactive');
+  state = 'picking';
+}
+
+// ── Choose a card ─────────────────────────────────────────────────────────────
+
+async function chooseCard(cardIdx) {
+  if (state !== 'picking') return;
+  state = 'revealing';
+
+  // Remove interactivity & hint
+  for (let i = 0; i < 3; i++) $(`pc-${i}`).classList.remove('interactive');
+  $('pick-hint').style.opacity = '0';
+
+  // Dismiss unchosen cards
+  for (let i = 0; i < 3; i++) {
+    if (i !== cardIdx) $(`pc-${i}`).classList.add('dismissed');
+  }
+  await wait(380);
+
+  // Render chosen principle
+  renderPrinciple(pickIndices[cardIdx]);
+
+  // Switch to reveal view
+  $('pick-view').classList.add('hidden');
+  $('reveal-view').classList.add('active');
+
+  // Flip card from face-down to revealed
+  const card = $('card');
+  card.style.transition = 'none';
+  card.style.transform  = 'rotateY(-90deg)';
+  card.getBoundingClientRect(); // force reflow
+  card.style.transition = 'transform 480ms cubic-bezier(0.22,1,0.36,1)';
+  card.style.transform  = 'rotateY(0deg)';
+  await wait(520);
+
+  // Start 6-second progress bar
+  const bar = $('progress-bar');
+  bar.style.transition = 'none';
+  bar.style.width      = '0%';
+  bar.getBoundingClientRect();
+  bar.style.transition = 'width 6s linear';
+  bar.style.width      = '100%';
+
+  state     = 'revealed';
+  resetTimer = setTimeout(() => startRound(), 6500);
+}
+
+// ── Boot ─────────────────────────────────────────────────────────────────────
+
+buildStars();
+startRound();
+</script>
+</body>
+</html>
